@@ -6,27 +6,7 @@ const bot = new TelegramBot(token)
 
 let state = {} // Объект для хранения состояний пользователей
 
-bot.onText(/\/start/, msg => {
-	const chatId = msg.chat.id
-	const name = msg.chat.first_name || 'пользователь'
-
-	const welcomeMessage = `Привет ${name}! Давай посчитаем зарплату и процент! Выбери нужную кнопку.`
-	const options = {
-		reply_markup: {
-			keyboard: [
-				[{ text: 'Расчет зарплаты исходя из процента' }],
-				[{ text: 'Расчет процента из зарплаты' }],
-				[{ text: 'Расчет общего процента' }],
-			],
-			one_time_keyboard: true,
-			resize_keyboard: true,
-		},
-	}
-
-	bot.sendMessage(chatId, welcomeMessage, options)
-})
-
-const deleteMessageWithDelay = (chatId, messageId, delay = 100) => {
+const deleteMessageWithDelay = (chatId, messageId, delay = 1000) => {
 	setTimeout(() => {
 		bot.deleteMessage(chatId, messageId).catch(console.error)
 	}, delay)
@@ -36,8 +16,24 @@ bot.on('message', async msg => {
 	const chatId = msg.chat.id
 	const text = msg.text
 
-	if (text === 'Расчет зарплаты исходя из процента') {
-		const message = await bot.sendMessage(chatId, 'Введи нужный процент:')
+	if (text === '/start') {
+		const name = msg.chat.first_name || 'пользователь'
+
+		const welcomeMessage = `Привет ${name}! Давай посчитаем зарплату и процент! Выбери нужную кнопку.`
+		const options = {
+			reply_markup: {
+				keyboard: [
+					[{ text: 'Расчет зарплаты исходя из процента' }],
+					[{ text: 'Расчет процента из зарплаты' }],
+				],
+				one_time_keyboard: true,
+				resize_keyboard: true,
+			},
+		}
+
+		bot.sendMessage(chatId, welcomeMessage, options)
+	} else if (text === 'Расчет зарплаты исходя из процента') {
+		const message = await bot.sendMessage(chatId, 'Введите нужный процент:')
 		state[chatId] = { step: 'percent', botMessageId: message.message_id }
 	} else if (state[chatId] && state[chatId].step === 'percent') {
 		const percent = parseFloat(text)
@@ -48,7 +44,7 @@ bot.on('message', async msg => {
 			deleteMessageWithDelay(chatId, msg.message_id)
 			deleteMessageWithDelay(chatId, state[chatId].botMessageId)
 
-			const message = await bot.sendMessage(chatId, 'Введи количество часов:')
+			const message = await bot.sendMessage(chatId, 'Введите количество часов:')
 			state[chatId].botMessageId = message.message_id
 		} else {
 			bot.sendMessage(
@@ -61,9 +57,7 @@ bot.on('message', async msg => {
 		if (!isNaN(hours)) {
 			state[chatId].hours = hours
 
-			const resultHour = state[chatId].hours * 60 * state[chatId].percent
-
-			const result = state[chatId].hours * resultHour
+			const result = state[chatId].hours * 60 * state[chatId].percent
 
 			deleteMessageWithDelay(chatId, msg.message_id)
 			deleteMessageWithDelay(chatId, state[chatId].botMessageId)
@@ -73,15 +67,8 @@ bot.on('message', async msg => {
 		} else {
 			bot.sendMessage(chatId, 'Пожалуйста, введите корректное число для часов.')
 		}
-	}
-})
-
-bot.on('message', async msg => {
-	const chatId = msg.chat.id
-	const text = msg.text
-
-	if (text === 'Расчет процента из зарплаты') {
-		const message = await bot.sendMessage(chatId, 'Введи зарплату:')
+	} else if (text === 'Расчет процента из зарплаты') {
+		const message = await bot.sendMessage(chatId, 'Введите зарплату:')
 		state[chatId] = { step: 'zarplata', botMessageId: message.message_id }
 	} else if (state[chatId] && state[chatId].step === 'zarplata') {
 		const zarplata = parseFloat(text)
@@ -92,12 +79,12 @@ bot.on('message', async msg => {
 			deleteMessageWithDelay(chatId, msg.message_id)
 			deleteMessageWithDelay(chatId, state[chatId].botMessageId)
 
-			const message = await bot.sendMessage(chatId, 'Введи количество часов:')
+			const message = await bot.sendMessage(chatId, 'Введите количество часов:')
 			state[chatId].botMessageId = message.message_id
 		} else {
 			bot.sendMessage(
 				chatId,
-				'Пожалуйста, введите корректное число для процента.'
+				'Пожалуйста, введите корректное число для зарплаты.'
 			)
 		}
 	} else if (state[chatId] && state[chatId].step === 'chas') {
