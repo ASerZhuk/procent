@@ -4,7 +4,7 @@ const token = process.env.TELEGRAM_BOT_TOKEN
 
 const bot = new TelegramBot(token)
 
-bot.setWebHook('https://procent-xi.vercel.app')
+bot.setWebHook('https://procent-xi.vercel.app/api/tlg')
 
 let state = {} // Объект для хранения состояний пользователей
 
